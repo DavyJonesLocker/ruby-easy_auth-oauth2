@@ -6,12 +6,17 @@ module EasyAuth
 
   module OAuth2
     extend ActiveSupport::Autoload
+    autoload :Controllers
     autoload :Models
     autoload :Routes
   end
 
   module Models::Account
     include EasyAuth::OAuth2::Models::Account
+  end
+
+  module Controllers::Sessions
+    include EasyAuth::OAuth2::Controllers::Sessions
   end
 
   def self.o_auth2_identity_model(controller)
