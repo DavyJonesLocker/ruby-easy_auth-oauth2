@@ -11,8 +11,14 @@ module EasyAuth
     autoload :Routes
   end
 
-  module Models::Account
-    include EasyAuth::OAuth2::Models::Account
+  module Models
+    module Account
+      include EasyAuth::OAuth2::Models::Account
+    end
+
+    module Identities
+      autoload :OAuth2
+    end
   end
 
   module Controllers::Sessions
