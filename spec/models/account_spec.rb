@@ -3,9 +3,9 @@ require 'spec_helper'
 describe EasyAuth::OAuth2::Models::Account do
   describe 'o_auth_identities relationship' do
     before do
-      class OtherIdentity < EasyAuth::Identity; end
-      class OAuth2IdentityA < EasyAuth::Identities::OAuth2::Base; end
-      class OAuth2IdentityB < EasyAuth::Identities::OAuth2::Base; end
+      class OtherIdentity < Identity; end
+      class OAuth2IdentityA < Identities::OAuth2::Base; end
+      class OAuth2IdentityB < Identities::OAuth2::Base; end
 
       @user = create(:user)
       @other_identity = OtherIdentity.create(:account => @user)

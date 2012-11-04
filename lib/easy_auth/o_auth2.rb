@@ -25,8 +25,16 @@ module EasyAuth
     include EasyAuth::OAuth2::Controllers::Sessions
   end
 
-  def self.o_auth2_identity_model(controller)
-    send("o_auth2_#{controller.params[:provider]}_identity_model", controller)
+  def self.o_auth2_identity_model(params)
+    method_name = "o_auth2_#{params[:provider]}_identity_model"
+    camelcased_provider_name = params[:provider].to_s.camelcase
+    if respond_to?(method_name)
+      send(method_name, params)
+    elsif eval("defined?(Identities::OAuth2::#{camelcased_provider_name})")
+      eval("Identities::OAuth2::#{camelcased_provider_name}")
+    else
+      camelcased_provider_name.constantize
+    end
   end
 
   class << self
