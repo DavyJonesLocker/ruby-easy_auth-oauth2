@@ -1,6 +1,6 @@
 require 'oauth2'
 
-module EasyAuth::Models::Identities::OAuth2::Base
+module EasyAuth::Models::Identities::Oauth2::Base
   def self.included(base)
     base.class_eval do
       extend ClassMethods
@@ -9,7 +9,7 @@ module EasyAuth::Models::Identities::OAuth2::Base
 
   module ClassMethods
     def authenticate(controller)
-      callback_url   = controller.o_auth2_callback_url(:provider => provider)
+      callback_url   = controller.oauth2_callback_url(:provider => provider)
       code           = controller.params[:code]
       token          = client.auth_code.get_token(code, token_options(callback_url))
       user_info      = get_user_info(token)
@@ -27,11 +27,11 @@ module EasyAuth::Models::Identities::OAuth2::Base
     end
 
     def new_session(controller)
-      controller.redirect_to authenticate_url(controller.o_auth2_callback_url(:provider => provider))
+      controller.redirect_to authenticate_url(controller.oauth2_callback_url(:provider => provider))
     end
 
     def get_access_token(identity)
-      OAuth2::AccessToken.new client, identity.token
+      ::OAuth2::AccessToken.new client, identity.token
     end
 
     private
@@ -49,7 +49,7 @@ module EasyAuth::Models::Identities::OAuth2::Base
     end
 
     def client
-      @client ||= OAuth2::Client.new(client_id, secret, :site => site_url, :authorize_url => authorize_url, :token_url => token_url)
+      @client ||= ::OAuth2::Client.new(client_id, secret, :site => site_url, :authorize_url => authorize_url, :token_url => token_url)
     end
 
     def authenticate_url(callback_url)
@@ -85,7 +85,7 @@ module EasyAuth::Models::Identities::OAuth2::Base
     end
 
     def settings
-      EasyAuth.o_auth2[provider]
+      EasyAuth.oauth2[provider]
     end
 
     def provider

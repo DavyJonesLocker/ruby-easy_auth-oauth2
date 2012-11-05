@@ -1,4 +1,4 @@
-module EasyAuth::Models::Identities::OAuth2
+module EasyAuth::Models::Identities::Oauth2
   extend ActiveSupport::Autoload
   autoload :Base
 end

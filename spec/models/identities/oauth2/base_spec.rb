@@ -1,10 +1,10 @@
 require 'spec_helper'
 
-describe EasyAuth::Models::Identities::OAuth2::Base do
+describe EasyAuth::Models::Identities::Oauth2::Base do
   context 'access tokens' do
     before do
       class TestIdentity < Identity
-        include(EasyAuth::Models::Identities::OAuth2::Base)
+        include(EasyAuth::Models::Identities::Oauth2::Base)
       end
       TestIdentity.stubs(:client).returns(client)
     end
@@ -13,7 +13,7 @@ describe EasyAuth::Models::Identities::OAuth2::Base do
     let(:identity) { TestIdentity.new :token => 'token' }
 
     describe '.get_access_token' do
-      it 'returns an OAuth2 Access Token' do
+      it 'returns an OAuth Access Token' do
         access_token = TestIdentity.get_access_token identity
         access_token.class.should eq OAuth2::AccessToken
       end
@@ -30,7 +30,7 @@ describe EasyAuth::Models::Identities::OAuth2::Base do
     end
 
     describe '#get_access_token' do
-      it 'returns an OAuth2 Access Token' do
+      it 'returns an OAuth Access Token' do
         access_token = identity.get_access_token
         access_token.class.should eq OAuth2::AccessToken
       end

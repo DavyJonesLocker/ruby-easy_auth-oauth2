@@ -14,7 +14,7 @@ require 'valid_attribute'
 require 'factory_girl'
 require 'bourne'
 require 'rails'
-require 'easy_auth-o_auth2'
+require 'easy_auth-oauth2'
 
 ENGINE_RAILS_ROOT=File.join(File.dirname(__FILE__), '../')
 
