@@ -14,13 +14,8 @@ In your Gemfile add the following:
 gem 'easy_auth-oauth2'
 ```
 
-After running Bundler you'll need to install the migrations
-
-```ruby
-rake easy_auth-oauth2:install:migrations
-```
-
-Then run your migrations.
+Then follow the general installation instructions for
+[EasyAuth](https://github.com/dockyard/easy_auth#installation)
 
 ## Authors ##
 
