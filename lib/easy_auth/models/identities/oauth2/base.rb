@@ -9,21 +9,23 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
   module ClassMethods
     def authenticate(controller)
-      callback_url   = controller.oauth2_callback_url(:provider => provider)
-      code           = controller.params[:code]
-      token          = client.auth_code.get_token(code, token_options(callback_url))
-      user_info      = get_user_info(token)
-      identity       = self.find_or_initialize_by_username user_info['id'].to_s
-      identity.token = token.token
-      account        = controller.current_account
+      if controller.params[:code].present? && controller.params[:error].blank?
+        callback_url   = controller.oauth2_callback_url(:provider => provider)
+        code           = controller.params[:code]
+        token          = client.auth_code.get_token(code, token_options(callback_url))
+        user_info      = get_user_info(token)
+        identity       = self.find_or_initialize_by_username user_info['id'].to_s
+        identity.token = token.token
+        account        = controller.current_account
 
-      if identity.new_record?
-        account = EasyAuth.account_model.create(EasyAuth.account_model.identity_username_attribute => identity.username) if account.nil?
-        identity.account = account
+        if identity.new_record?
+          account = EasyAuth.account_model.create(EasyAuth.account_model.identity_username_attribute => identity.username) if account.nil?
+          identity.account = account
+        end
+
+        identity.save!
+        identity
       end
-
-      identity.save!
-      identity
     end
 
     def new_session(controller)
