@@ -20,6 +20,7 @@ Then follow the general installation instructions for
 ## Authors ##
 
 [Brian Cardarella](http://twitter.com/bcardarella)
+[Dan McClain](http://twitter.com/_danmcclain)
 
 ## Versioning ##
 
