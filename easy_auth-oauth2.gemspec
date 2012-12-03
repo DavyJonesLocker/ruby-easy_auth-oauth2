@@ -21,5 +21,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'database_cleaner'
   s.add_development_dependency 'valid_attribute'
   s.add_development_dependency 'factory_girl', '~> 2.6.0'
-  s.add_development_dependency 'bourne'
+  s.add_development_dependency 'mocha', '~> 0.10.5'
 end

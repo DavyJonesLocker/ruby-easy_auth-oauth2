@@ -12,7 +12,6 @@ require 'bundler/setup'
 require 'rspec'
 require 'valid_attribute'
 require 'factory_girl'
-require 'bourne'
 require 'rails'
 require 'easy_auth-oauth2'
 

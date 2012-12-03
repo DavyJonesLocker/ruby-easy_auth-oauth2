@@ -19,13 +19,17 @@ module EasyAuth::Models::Identities::Oauth2::Base
         account        = controller.current_account
 
         if identity.new_record?
-          account = EasyAuth.account_model.create(EasyAuth.account_model.identity_username_attribute => identity.username) if account.nil?
+          account = EasyAuth.account_model.create(username_attribute => identity.username) if account.nil?
           identity.account = account
         end
 
         identity.save!
         identity
       end
+    end
+
+    def username_attribute
+      :email
     end
 
     def new_session(controller)
