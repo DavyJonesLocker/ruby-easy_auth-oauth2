@@ -16,11 +16,10 @@ module EasyAuth::Models::Identities::Oauth2::Base
         user_info      = get_user_info(token)
         identity       = self.find_or_initialize_by_username user_info['id'].to_s
         identity.token = token.token
-        account        = controller.current_account
 
-        if identity.new_record?
-          account = EasyAuth.account_model.create(username_attribute => identity.username) if account.nil?
-          identity.account = account
+        unless controller.current_account && identity.account
+          account = EasyAuth.account_model.create!(account_attributes(user_info)) if account.nil?
+          identity.account = controller.current_account
         end
 
         identity.save!
@@ -28,8 +27,19 @@ module EasyAuth::Models::Identities::Oauth2::Base
       end
     end
 
-    def username_attribute
-      :email
+    def account_attributes(user_info)
+      columns = EasyAuth.account_model.columns.map(&:name) - ['id']
+      user_info_mapped_to_account_attributes.inject({}) do |hash, kv|
+        if columns.include?(kv[1].to_s)
+          hash[kv[1]] = user_info[kv[0]]
+        end
+
+        hash
+      end
+    end
+
+    def user_info_mapped_to_account_attributes
+      { 'email' => :email }
     end
 
     def new_session(controller)
@@ -38,6 +48,14 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def get_access_token(identity)
       ::OAuth2::AccessToken.new client, identity.token
+    end
+
+    def oauth2_scope
+      ''
+    end
+
+    def oauth2_to_account_attributes_map
+      {}
     end
 
     private
@@ -50,16 +68,12 @@ module EasyAuth::Models::Identities::Oauth2::Base
       ActiveSupport::JSON.decode(token.get(user_info_url).body)
     end
 
-    def provider
-      raise NotImplementedError
-    end
-
     def client
       @client ||= ::OAuth2::Client.new(client_id, secret, :site => site_url, :authorize_url => authorize_url, :token_url => token_url)
     end
 
     def authenticate_url(callback_url)
-      client.auth_code.authorize_url(:redirect_uri => callback_url, :scope => scope)
+      client.auth_code.authorize_url(:redirect_uri => callback_url, :scope => oauth2_scope)
     end
 
     def user_info_url
@@ -76,10 +90,6 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def site_url
       raise NotImplementedError
-    end
-
-    def scope
-      settings.scope
     end
 
     def client_id

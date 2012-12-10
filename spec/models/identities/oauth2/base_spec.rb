@@ -1,17 +1,26 @@
 require 'spec_helper'
 
 describe EasyAuth::Models::Identities::Oauth2::Base do
-  context 'access tokens' do
-    before do
-      class TestIdentity < Identity
-        include(EasyAuth::Models::Identities::Oauth2::Base)
+  before(:all) do
+    class TestIdentity < Identity
+      include(EasyAuth::Models::Identities::Oauth2::Base)
+
+      def self.user_info_url
+        '/user'
       end
-      TestIdentity.stubs(:client).returns(client)
     end
+  end
 
-    let(:client)   { OAuth2::Client.new('client_id', 'secret', :site => 'http://example.com', :authorize_url => '/auth', :token_url => '/token' ) }
-    let(:identity) { TestIdentity.new :token => 'token' }
+  before { TestIdentity.stubs(:client).returns(client) }
 
+  after(:all) do
+    Object.send(:remove_const, :TestIdentity)
+  end
+
+  let(:client)   { OAuth2::Client.new('client_id', 'secret', :site => 'http://example.com', :authorize_url => '/auth', :token_url => '/token' ) }
+  let(:identity) { TestIdentity.new(:token => 'token') }
+
+  context 'access tokens' do
     describe '.get_access_token' do
       it 'returns an OAuth Access Token' do
         access_token = TestIdentity.get_access_token identity
@@ -46,9 +55,135 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       end
 
     end
+  end
 
-    after do
-      Object.send(:remove_const, :TestIdentity)
+  describe '#authenticate' do
+    context 'failure states' do
+      let(:controller) { OpenStruct.new(:params => {}) }
+      it 'returns nil when :code param is missing' do
+        TestIdentity.authenticate(controller).should be_nil
+      end
+
+      it 'returns nil when :error is not blank' do
+        controller.params[:code]  = '123'
+        controller.params[:error] = '123'
+        TestIdentity.authenticate(controller).should be_nil
+      end
+
+      context 'with invalid account' do
+        let(:controller) { OpenStruct.new(:params => { :code => '123' }) }
+        let(:identity) { TestIdentity.authenticate(controller) }
+        before do
+          controller.stubs(:oauth2_callback_url).returns('')
+          controller.stubs(:curent_account).returns(nil)
+          token = mock('Token')
+          token.stubs(:token).returns('123')
+          token.stubs(:get).returns(OpenStruct.new(:body => {id: 123, email: 'test@example.com'}.to_json ))
+          TestIdentity.client.auth_code.stubs(:get_token).returns(token)
+          User.any_instance.stubs(:perform_validations).returns(false)
+        end
+
+        it 'raises ActiveRecord::RecordInvalid' do
+          expect {
+            identity
+          }.to raise_error(ActiveRecord::RecordInvalid)
+        end
+      end
+    end
+
+    context 'success states' do
+      let(:controller) { OpenStruct.new(:params => { :code => '123' }) }
+      let(:identity) { TestIdentity.authenticate(controller) }
+      before do
+        controller.stubs(:oauth2_callback_url).returns('')
+        token = mock('Token')
+        token.stubs(:token).returns('123')
+        token.stubs(:get).returns(OpenStruct.new(:body => {id: '123', email: 'test@example.com'}.to_json ))
+        TestIdentity.client.auth_code.stubs(:get_token).returns(token)
+      end
+
+      context 'identity does not exist' do
+        context 'linking to an existing account' do
+          before do
+            @user = create(:user)
+            controller.stubs(:current_account).returns(@user)
+          end
+
+          it 'returns an identity' do
+            identity.should be_instance_of(TestIdentity)
+          end
+
+          it 'links to the account' do
+            identity.account.should eq @user
+          end
+        end
+
+        context 'creating a new account' do
+          before do
+            controller.stubs(:curent_account).returns(nil)
+          end
+
+          it 'returns an identity' do
+            identity.should be_instance_of(TestIdentity)
+          end
+
+          it 'creates a new account' do
+            expect {
+              identity
+            }.to change { User.count }.by(1)
+          end
+        end
+      end
+
+      context 'identity already exists' do
+        before do
+          TestIdentity.create(:username => '123', :token => '123')
+        end
+
+        context 'linking to an existing account' do
+          before do
+            @user = create(:user)
+            controller.stubs(:current_account).returns(@user)
+          end
+
+          it 'returns an identity' do
+            identity.should be_instance_of(TestIdentity)
+          end
+
+          it 'links to the account' do
+            identity.account.should eq @user
+          end
+
+          it 'does not create a new identity' do
+            expect {
+              identity
+            }.to_not change { TestIdentity.count }
+          end
+        end
+
+        context 'creating a new account' do
+          let(:identity) { TestIdentity.authenticate(controller) }
+          before do
+            controller.stubs(:curent_account).returns(nil)
+          end
+
+          it 'returns an identity' do
+            identity.should be_instance_of(TestIdentity)
+          end
+
+          it 'creates a new account' do
+            expect {
+              identity
+            }.to change { User.count }.by(1)
+          end
+
+          it 'does not create a new identity' do
+            expect {
+              identity
+            }.to_not change { TestIdentity.count }
+          end
+        end
+      end
     end
   end
 end

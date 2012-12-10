@@ -1,17 +1,18 @@
 require 'spec_helper'
 
 describe EasyAuth::Oauth2::Models::Account do
-  describe 'o_auth_identities relationship' do
+  describe 'oauth2_identities relationship' do
     before do
-      class OtherIdentity < Identity; end
+      class OtherIdentity   < Identity; end
       class Oauth2IdentityA < Identities::Oauth2::Base; end
       class Oauth2IdentityB < Identities::Oauth2::Base; end
 
       @user = create(:user)
-      @other_identity = OtherIdentity.create(:account => @user)
-      @oauth2_identity_a = Oauth2IdentityA.create(:account => @user)
-      @oauth2_identity_b = Oauth2IdentityB.create(:account => @user)
+      @other_identity    = OtherIdentity.create(:account => @user,   :username => @user.email)
+      @oauth2_identity_a = Oauth2IdentityA.create(:account => @user, :username => @user.email)
+      @oauth2_identity_b = Oauth2IdentityB.create(:account => @user, :username => @user.email)
     end
+
     after do
       Object.send(:remove_const, :OtherIdentity)
       Object.send(:remove_const, :Oauth2IdentityA)
