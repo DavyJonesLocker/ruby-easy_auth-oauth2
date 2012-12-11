@@ -28,9 +28,9 @@ module EasyAuth::Models::Identities::Oauth2::Base
     end
 
     def account_attributes(user_info)
-      columns = EasyAuth.account_model.columns.map(&:name) - ['id']
+      setters = EasyAuth.account_model.instance_methods.grep(/=$/) - [:id=]
       user_info_mapped_to_account_attributes.inject({}) do |hash, kv|
-        if columns.include?(kv[1].to_s)
+        if setters.include?("#{kv[1]}=".to_sym)
           hash[kv[1]] = user_info[kv[0]]
         end
 
@@ -52,10 +52,6 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def oauth2_scope
       ''
-    end
-
-    def oauth2_to_account_attributes_map
-      {}
     end
 
     private
