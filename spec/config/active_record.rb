@@ -8,7 +8,6 @@ RSpec.configure do |config|
     )
     users_table      = %{CREATE TABLE users (id INTEGER PRIMARY KEY, email VARCHAR(255));}
     identities_table = %{CREATE TABLE identities (id INTEGER PRIMARY KEY, username VARCHAR(255), token VARCHAT(255), account_type VARCHAR(255), account_id INTEGER, type VARCHAR(255));}
-    sqlite_sequence  = %{CREATE table sqlite_sequence (name,seq)}
     ActiveRecord::Base.connection.execute(users_table)
     ActiveRecord::Base.connection.execute(identities_table)
     class ::User < ActiveRecord::Base
