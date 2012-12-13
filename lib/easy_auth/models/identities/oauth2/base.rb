@@ -14,7 +14,7 @@ module EasyAuth::Models::Identities::Oauth2::Base
         code           = controller.params[:code]
         token          = client.auth_code.get_token(code, token_options(callback_url))
         user_info      = get_user_info(token)
-        identity       = self.find_or_initialize_by_username user_info['id'].to_s
+        identity       = self.find_or_initialize_by_uid user_info['id'].to_s
         identity.token = token.token
 
         unless controller.current_account && identity.account
