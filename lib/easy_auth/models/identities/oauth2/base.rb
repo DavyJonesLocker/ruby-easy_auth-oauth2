@@ -29,17 +29,17 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def account_attributes(user_info)
       setters = EasyAuth.account_model.instance_methods.grep(/=$/) - [:id=]
-      user_info_mapped_to_account_attributes.inject({}) do |hash, kv|
-        if setters.include?("#{kv[1]}=".to_sym)
-          hash[kv[1]] = user_info[kv[0]]
+      account_attributes_map.inject({}) do |hash, kv|
+        if setters.include?("#{kv[0]}=".to_sym)
+          hash[kv[0]] = user_info[kv[1]]
         end
 
         hash
       end
     end
 
-    def user_info_mapped_to_account_attributes
-      { 'email' => :email }
+    def account_attributes_map
+      { :email => 'email' }
     end
 
     def new_session(controller)
