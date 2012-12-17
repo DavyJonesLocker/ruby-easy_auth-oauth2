@@ -17,9 +17,19 @@ module EasyAuth::Models::Identities::Oauth2::Base
         identity       = self.find_or_initialize_by_uid user_info['id'].to_s
         identity.token = token.token
 
-        unless controller.current_account && identity.account
-          account = EasyAuth.account_model.create!(account_attributes(user_info)) if account.nil?
-          identity.account = controller.current_account
+        if controller.current_account
+          if identity.account
+            if identity.account != controller.current_account
+              controller.flash[:error] = 'Error!'
+              return nil
+            end
+          else
+            identity.account = controller.current_account
+          end
+        else
+          unless identity.account
+            identity.account = EasyAuth.account_model.create!(account_attributes(user_info))
+          end
         end
 
         identity.save!
@@ -28,6 +38,7 @@ module EasyAuth::Models::Identities::Oauth2::Base
     end
 
     def account_attributes(user_info)
+      EasyAuth.account_model.define_attribute_methods unless EasyAuth.account_model.attribute_methods_generated?
       setters = EasyAuth.account_model.instance_methods.grep(/=$/) - [:id=]
       account_attributes_map.inject({}) do |hash, kv|
         if setters.include?("#{kv[0]}=".to_sym)
