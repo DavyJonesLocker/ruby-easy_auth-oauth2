@@ -65,8 +65,6 @@ module EasyAuth::Models::Identities::Oauth2::Base
       ''
     end
 
-    private
-
     def token_options(callback_url)
       { :redirect_uri => callback_url }
     end
