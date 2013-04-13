@@ -8,6 +8,10 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       def self.user_info_url
         '/user'
       end
+
+      def self.retrieve_uid(user_info)
+        user_info['email']
+      end
     end
   end
 
@@ -73,12 +77,14 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       context 'with invalid account' do
         let(:controller) { OpenStruct.new(:params => { :code => '123' }) }
         let(:identity) { TestIdentity.authenticate(controller) }
+        let(:email) { FactoryGirl.generate(:email) }
+
         before do
           controller.stubs(:oauth2_callback_url).returns('')
           controller.stubs(:curent_account).returns(nil)
           token = mock('Token')
           token.stubs(:token).returns('123')
-          token.stubs(:get).returns(OpenStruct.new(:body => {id: 123, email: 'test@example.com'}.to_json ))
+          token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
           TestIdentity.client.auth_code.stubs(:get_token).returns(token)
           User.any_instance.stubs(:perform_validations).returns(false)
         end
@@ -94,11 +100,13 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
     context 'success states' do
       let(:controller) { OpenStruct.new(:params => { :code => '123' }, :flash => {}) }
       let(:identity) { TestIdentity.authenticate(controller) }
+      let(:email) { FactoryGirl.generate(:email) }
+
       before do
         controller.stubs(:oauth2_callback_url).returns('')
         token = mock('Token')
         token.stubs(:token).returns('123')
-        token.stubs(:get).returns(OpenStruct.new(:body => {id: '123', email: 'test@example.com'}.to_json ))
+        token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
         TestIdentity.client.auth_code.stubs(:get_token).returns(token)
       end
 
@@ -140,13 +148,15 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       end
 
       context 'identity already exists' do
+        let(:email) { FactoryGirl.generate(:email) }
+
         before do
-          @test_identity = TestIdentity.create(:uid => '123', :token => '123')
+          @test_identity = TestIdentity.create(:uid => email, :token => '123')
         end
 
         context 'linking to an existing account' do
           before do
-            @user = create(:user)
+            @user = create(:user, :email => email)
             controller.stubs(:current_account).returns(@user)
           end
 

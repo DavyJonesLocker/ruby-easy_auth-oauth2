@@ -12,9 +12,9 @@ module EasyAuth::Models::Identities::Oauth2::Base
       if controller.params[:code].present? && controller.params[:error].blank?
         callback_url   = controller.oauth2_callback_url(:provider => provider)
         code           = controller.params[:code]
-        token          = client.auth_code.get_token(code, token_options(callback_url))
+        token          = client.auth_code.get_token(code, token_options(callback_url), token_params)
         user_info      = get_user_info(token)
-        identity       = self.find_or_initialize_by_uid user_info['id'].to_s
+        identity       = self.find_or_initialize_by_uid retrieve_uid(user_info)
         identity.token = token.token
 
         if controller.current_account
@@ -53,6 +53,11 @@ module EasyAuth::Models::Identities::Oauth2::Base
       { :email => 'email' }
     end
 
+    # Returns the account uid value from available attributes
+    def retrieve_uid(user_info)
+      raise NotImplementedError
+    end
+
     def new_session(controller)
       controller.redirect_to authenticate_url(controller.oauth2_callback_url(:provider => provider))
     end
@@ -67,6 +72,11 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def token_options(callback_url)
       { :redirect_uri => callback_url }
+    end
+
+    # Needed by some OAuth2 providers the use custom query parameters
+    def token_params
+      {}
     end
 
     def get_user_info(token)
