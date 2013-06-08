@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.files = Dir['{app,config,db,lib}/**/*'] + ['Rakefile', 'README.md']
 
   s.add_dependency 'easy_auth', '~> 0.3.0'
-  s.add_dependency 'oauth2',    '~> 0.8.0'
+  s.add_dependency 'oauth2',    '~> 0.9.1'
 
   s.add_development_dependency 'rspec'
   s.add_development_dependency 'sqlite3'
