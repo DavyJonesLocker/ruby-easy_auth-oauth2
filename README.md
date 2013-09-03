@@ -33,8 +33,7 @@ pull requests to specific branches rather than master.
 
 Please make sure you include tests!
 
-Unles Rails drops support for Ruby 1.8.7 we will continue to use the
-hash-rocket syntax. Please respect this.
+Easy Auth has a hard requirement of Ruby 2.0-p247 or higher.
 
 Don't use tabs to indent, two spaces are the standard.
 
