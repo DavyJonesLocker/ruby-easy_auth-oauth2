@@ -30,8 +30,8 @@ module EasyAuth
     camelcased_provider_name = params[:provider].to_s.camelcase
     if respond_to?(method_name)
       send(method_name, params)
-    elsif eval("::Identities::Oauth2::#{camelcased_provider_name} rescue nil")
-      eval("::Identities::Oauth2::#{camelcased_provider_name}")
+    elsif const_defined? "::Identities::Oauth2::#{camelcased_provider_name}".to_sym
+      const_get("::Identities::Oauth2::#{camelcased_provider_name}")
     else
       camelcased_provider_name.constantize
     end
