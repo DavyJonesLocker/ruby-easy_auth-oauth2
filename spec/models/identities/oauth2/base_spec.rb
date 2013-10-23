@@ -15,7 +15,7 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
     end
   end
 
-  before { TestIdentity.stubs(:client).returns(client) }
+  before { TestIdentity.stub(:client).and_return(client) }
 
   after(:all) do
     Object.send(:remove_const, :TestIdentity)
@@ -80,13 +80,13 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         let(:email) { FactoryGirl.generate(:email) }
 
         before do
-          controller.stubs(:oauth2_callback_url).returns('')
-          controller.stubs(:curent_account).returns(nil)
-          token = mock('Token')
-          token.stubs(:token).returns('123')
-          token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
-          TestIdentity.client.auth_code.stubs(:get_token).returns(token)
-          User.any_instance.stubs(:perform_validations).returns(false)
+          controller.stub(:oauth2_callback_url).and_return('')
+          controller.stub(:curent_account).and_return(nil)
+          token = double('Token')
+          token.stub(:token).and_return('123')
+          token.stub(:get).and_return(OpenStruct.new(:body => {email: email}.to_json ))
+          TestIdentity.client.auth_code.stub(:get_token).and_return(token)
+          User.any_instance.stub(:perform_validations).and_return(false)
         end
 
         it 'raises ActiveRecord::RecordInvalid' do
@@ -103,18 +103,18 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       let(:email) { FactoryGirl.generate(:email) }
 
       before do
-        controller.stubs(:oauth2_callback_url).returns('')
-        token = mock('Token')
-        token.stubs(:token).returns('123')
-        token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
-        TestIdentity.client.auth_code.stubs(:get_token).returns(token)
+        controller.stub(:oauth2_callback_url).and_return('')
+        token = double('Token')
+        token.stub(:token).and_return('123')
+        token.stub(:get).and_return(OpenStruct.new(:body => {email: email}.to_json ))
+        TestIdentity.client.auth_code.stub(:get_token).and_return(token)
       end
 
       context 'identity does not exist' do
         context 'linking to an existing account' do
           before do
             @user = create(:user)
-            controller.stubs(:current_account).returns(@user)
+            controller.stub(:current_account).and_return(@user)
           end
 
           it 'returns an identity' do
@@ -128,7 +128,7 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
 
         context 'creating a new account' do
           before do
-            controller.stubs(:curent_account).returns(nil)
+            controller.stub(:curent_account).and_return(nil)
           end
 
           it 'returns an identity' do
@@ -151,13 +151,13 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         let(:email) { FactoryGirl.generate(:email) }
 
         before do
-          @test_identity = TestIdentity.create(:uid => email, :token => '123')
+          @test_identity = TestIdentity.create(:uid => [email], :token => '123')
         end
 
         context 'linking to an existing account' do
           before do
             @user = create(:user, :email => email)
-            controller.stubs(:current_account).returns(@user)
+            controller.stub(:current_account).and_return(@user)
           end
 
           it 'returns an identity' do
@@ -193,7 +193,7 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         context 'creating a new account' do
           let(:identity) { TestIdentity.authenticate(controller) }
           before do
-            controller.stubs(:curent_account).returns(nil)
+            controller.stub(:curent_account).and_return(nil)
           end
 
           it 'returns an identity' do
