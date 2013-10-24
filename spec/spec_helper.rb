@@ -1,26 +1,10 @@
-require 'rubygems'
-begin
-  require 'debugger'
-rescue LoadError
-end
-begin
-  require 'ruby-debug'
-rescue LoadError
-end
-require 'bundler/setup'
-
+ENV['RAILS_ENV'] ||= 'test'
 require 'rspec'
 require 'valid_attribute'
 require 'factory_girl'
 require 'rails'
 require 'easy_auth-oauth2'
+require File.expand_path('../dummy/config/environment', __FILE__)
 
-ENGINE_RAILS_ROOT=File.join(File.dirname(__FILE__), '../')
-
-Dir[File.join(ENGINE_RAILS_ROOT, 'spec/support/**/*.rb')].each { |f| require f }
-Dir[File.join(ENGINE_RAILS_ROOT, 'spec/config/**/*.rb')].each { |f| require f }
-
-RSpec.configure do |config|
-  config.mock_with :mocha
-  config.include Factory::Syntax::Methods
-end
+Dir[Rails.root.join('../support/**/*.rb')].each {|f| require f}
+Dir[Rails.root.join('../config/**/*.rb')].each {|f| require f}
