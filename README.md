@@ -31,7 +31,8 @@ This gem follows [Semantic Versioning](http://semver.org)
 Stable branches are created based upon each minor version. Please make
 pull requests to specific branches rather than master.
 
-Please make sure you include tests!
+Please make sure you include tests! To run the tests, you will need to create
+the `easy_auth_oauth2_test` postgres database.
 
 Unles Rails drops support for Ruby 1.8.7 we will continue to use the
 hash-rocket syntax. Please respect this.
