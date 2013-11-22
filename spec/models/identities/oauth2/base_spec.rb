@@ -151,7 +151,7 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         let(:email) { FactoryGirl.generate(:email) }
 
         before do
-          @test_identity = TestIdentity.create(:uid => email, :token => '123')
+          @test_identity = TestIdentity.create(:uid => [email], :token => '123')
         end
 
         context 'linking to an existing account' do

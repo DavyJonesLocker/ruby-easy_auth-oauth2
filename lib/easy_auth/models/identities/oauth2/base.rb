@@ -14,7 +14,8 @@ module EasyAuth::Models::Identities::Oauth2::Base
         code           = controller.params[:code]
         token          = client.auth_code.get_token(code, token_options(callback_url), token_params)
         user_info      = get_user_info(token)
-        identity       = self.find_or_initialize_by(:uid => retrieve_uid(user_info))
+        identity       = self.where.overlap(:uid => [retrieve_uid(user_info)]).first_or_initialize
+        identity.uid ||= [retrieve_uid(user_info)]
         identity.token = token.token
 
         if controller.current_account
