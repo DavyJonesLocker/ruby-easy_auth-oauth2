@@ -16,3 +16,5 @@ RSpec.configure do |config|
   config.mock_with :mocha
   config.include FactoryGirl::Syntax::Methods
 end
+
+I18n.enforce_available_locales = true
