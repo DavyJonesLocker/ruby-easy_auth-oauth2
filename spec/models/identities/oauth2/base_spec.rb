@@ -181,7 +181,7 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
 
           it 'does not create a new identity' do
             expect {
-              identity
+              run_controller
             }.to_not change { TestIdentity.count }
           end
 

@@ -1,15 +1,13 @@
+require 'easy_auth-oauth_core'
 require 'oauth2'
 
 module EasyAuth::Models::Identities::Oauth2::Base
-  def self.included(base)
-    base.class_eval do
-      extend ClassMethods
-    end
-  end
+  extend ActiveSupport::Concern
+  include EasyAuth::Models::Identities::OauthCore
 
   module ClassMethods
     def authenticate(controller)
-      if controller.params[:code].present? && controller.params[:error].blank?
+      super(controller) do
         callback_url   = controller.oauth2_callback_url(:provider => provider)
         code           = controller.params[:code]
         token          = client.auth_code.get_token(code, token_options(callback_url), token_params)
@@ -17,39 +15,7 @@ module EasyAuth::Models::Identities::Oauth2::Base
         identity       = self.find_or_initialize_by(:uid => retrieve_uid(user_info))
         identity.token = token.token
 
-        if controller.current_account
-          if identity.account
-            if identity.account != controller.current_account
-              controller.flash[:error] = I18n.t('easy_auth.oauth2.sessions.create.error')
-              return nil
-            end
-          else
-            identity.account = controller.current_account
-          end
-
-          identity.save!
-
-          return identity
-        else
-          unless identity.account
-            account_model_name = EasyAuth.account_model.model_name
-            env = clean_env(controller.env.dup)
-
-            env['QUERY_STRING'] = {account_model_name.param_key => account_attributes(user_info, identity)}.to_param
-
-            account_controller_class = ActiveSupport::Dependencies.constantize("#{account_model_name.route_key.camelize}Controller")
-            account_controller = account_controller_class.new
-            account_controller.dispatch(:create, ActionDispatch::Request.new(env))
-
-            controller.status = account_controller.status
-            controller.location = account_controller.location
-            controller.content_type = account_controller.content_type
-            controller.response_body = account_controller.response_body
-            controller.request.session = account_controller.session
-
-            return nil
-          end
-        end
+        [identity, user_info]
       end
     end
 
@@ -144,18 +110,6 @@ module EasyAuth::Models::Identities::Oauth2::Base
 
     def provider
       self.to_s.split('::').last.underscore.to_sym
-    end
-
-    private
-
-    def clean_env(env)
-      env.keys.grep(/action/).each do |key|
-        env.delete(key)
-      end
-
-      env.delete('rack.request.query_string')
-      env.delete('rack.request.query_hash')
-      env
     end
   end
 

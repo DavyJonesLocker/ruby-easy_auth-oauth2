@@ -15,6 +15,7 @@ Dir[File.join(ENGINE_RAILS_ROOT, 'spec/config/**/*.rb')].each { |f| require f }
 RSpec.configure do |config|
   config.mock_with :mocha
   config.include FactoryGirl::Syntax::Methods
+  config.backtrace_clean_patterns = []
 end
 
 I18n.enforce_available_locales = true
