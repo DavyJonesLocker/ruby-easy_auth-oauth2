@@ -1,5 +1,45 @@
 require 'spec_helper'
 
+class BaseTestController < ActionController::Base
+  def initialize(request = OpenStruct.new(parameters: {}))
+    super()
+    @_request = request
+  end
+
+  def current_account
+    nil
+  end
+
+  def oauth2_callback_url(options = {})
+    ''
+  end
+end
+
+class SessionsController < BaseTestController
+  include EasyAuth::Controllers::Sessions
+
+  def user_url(user)
+    "/users/#{user.id}"
+  end
+
+  def after_failed_sign_in
+    render text: ''
+  end
+end
+
+class UsersController < BaseTestController
+  def create
+    User.create(user_params)
+    redirect_to '/'
+  end
+
+  private
+
+  def user_params
+    params.require(:user).permit!
+  end
+end
+
 describe EasyAuth::Models::Identities::Oauth2::Base do
   before(:all) do
     class TestIdentity < Identity
@@ -63,7 +103,8 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
 
   describe '#authenticate' do
     context 'failure states' do
-      let(:controller) { OpenStruct.new(:params => {}) }
+      let(:controller) { SessionsController.new }
+
       it 'returns nil when :code param is missing' do
         TestIdentity.authenticate(controller).should be_nil
       end
@@ -73,37 +114,13 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         controller.params[:error] = '123'
         TestIdentity.authenticate(controller).should be_nil
       end
-
-      context 'with invalid account' do
-        let(:controller) { OpenStruct.new(:params => { :code => '123' }) }
-        let(:identity) { TestIdentity.authenticate(controller) }
-        let(:email) { FactoryGirl.generate(:email) }
-
-        before do
-          controller.stubs(:oauth2_callback_url).returns('')
-          controller.stubs(:curent_account).returns(nil)
-          token = mock('Token')
-          token.stubs(:token).returns('123')
-          token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
-          TestIdentity.client.auth_code.stubs(:get_token).returns(token)
-          User.any_instance.stubs(:perform_validations).returns(false)
-        end
-
-        it 'raises ActiveRecord::RecordInvalid' do
-          expect {
-            identity
-          }.to raise_error(ActiveRecord::RecordInvalid)
-        end
-      end
     end
 
     context 'success states' do
-      let(:controller) { OpenStruct.new(:params => { :code => '123' }, :flash => {}) }
-      let(:identity) { TestIdentity.authenticate(controller) }
+      let(:run_controller) { SessionsController.action(:create).call(Rack::MockRequest.env_for("?#{{code: '123', identity: 'oauth2', provider: 'test_identity'}.to_param}")) }
       let(:email) { FactoryGirl.generate(:email) }
 
       before do
-        controller.stubs(:oauth2_callback_url).returns('')
         token = mock('Token')
         token.stubs(:token).returns('123')
         token.stubs(:get).returns(OpenStruct.new(:body => {email: email}.to_json ))
@@ -114,35 +131,32 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         context 'linking to an existing account' do
           before do
             @user = create(:user)
-            controller.stubs(:current_account).returns(@user)
+            SessionsController.any_instance.stubs(:current_account).returns(@user)
           end
 
           it 'returns an identity' do
-            identity.should be_instance_of(TestIdentity)
+            run_controller
+            @user.identities.first.should be_instance_of(TestIdentity)
           end
 
-          it 'links to the account' do
-            identity.account.should eq @user
+          it 'creates a new identity' do
+            expect {
+              run_controller
+            }.to change { TestIdentity.count }.by(1)
           end
         end
 
         context 'creating a new account' do
-          before do
-            controller.stubs(:curent_account).returns(nil)
-          end
-
-          it 'returns an identity' do
-            identity.should be_instance_of(TestIdentity)
-          end
-
           it 'creates a new account' do
             expect {
-              identity
+              run_controller
             }.to change { User.count }.by(1)
           end
 
-          it 'associated the new account with the identity' do
-            identity.account.should_not be_nil
+          it 'creates a new identity' do
+            expect {
+              run_controller
+            }.to change { TestIdentity.count }.by(1)
           end
         end
       end
@@ -157,15 +171,12 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
         context 'linking to an existing account' do
           before do
             @user = create(:user, :email => email)
-            controller.stubs(:current_account).returns(@user)
+            SessionsController.any_instance.stubs(:current_account).returns(@user)
           end
 
           it 'returns an identity' do
-            identity.should be_instance_of(TestIdentity)
-          end
-
-          it 'links to the account' do
-            identity.account.should eq @user
+            run_controller
+            @user.identities.first.should eq @test_identity
           end
 
           it 'does not create a new identity' do
@@ -177,39 +188,16 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
           context 'identity account and current account mismatch' do
             before do
               @test_identity.update_attribute(:account, create(:user))
+              run_controller
             end
 
-            it 'returns nil' do
-              identity.should be_nil
+            it 'does not overwrite the account' do
+              @test_identity.account.should_not eq @user
             end
 
-            it 'sets the flash error' do
-              identity
-              controller.flash[:error].should_not be_nil
+            it 'sets an error flash' do
+              pending
             end
-          end
-        end
-
-        context 'creating a new account' do
-          let(:identity) { TestIdentity.authenticate(controller) }
-          before do
-            controller.stubs(:curent_account).returns(nil)
-          end
-
-          it 'returns an identity' do
-            identity.should be_instance_of(TestIdentity)
-          end
-
-          it 'creates a new account' do
-            expect {
-              identity
-            }.to change { User.count }.by(1)
-          end
-
-          it 'does not create a new identity' do
-            expect {
-              identity
-            }.to_not change { TestIdentity.count }
           end
         end
       end
