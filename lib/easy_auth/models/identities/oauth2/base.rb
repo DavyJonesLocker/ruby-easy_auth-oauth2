@@ -8,47 +8,23 @@ module EasyAuth::Models::Identities::Oauth2::Base
   module ClassMethods
     def authenticate(controller)
       super(controller) do
-        callback_url   = controller.oauth2_callback_url(:provider => provider)
-        code           = controller.params[:code]
-        token          = client.auth_code.get_token(code, token_options(callback_url), token_params)
-        user_info      = get_user_info(token)
-        identity       = self.find_or_initialize_by(:uid => retrieve_uid(user_info))
-        identity.token = token.token
+        callback_url    = controller.oauth2_callback_url(:provider => provider)
+        code            = controller.params[:code]
+        token           = client.auth_code.get_token(code, token_options(callback_url), token_params)
+        user_attributes = get_user_attributes(token)
+        identity        = self.find_or_initialize_by(:uid => retrieve_uid(user_attributes))
+        identity.token  = token.token
 
-        [identity, user_info]
+        [identity, user_attributes]
       end
-    end
-
-    def account_attributes(user_info, identity)
-      EasyAuth.account_model.define_attribute_methods unless EasyAuth.account_model.attribute_methods_generated?
-      setters = EasyAuth.account_model.instance_methods.grep(/=$/) - [:id=]
-
-      attributes = account_attributes_map.inject({}) do |hash, kv|
-        if setters.include?("#{kv[0]}=".to_sym)
-          hash[kv[0]] = user_info[kv[1]]
-        end
-
-        hash
-      end
-
-      attributes[:identities_attributes] = [
-        { uid: identity.uid, token: identity.token, type: identity.class.model_name.to_s }
-      ]
-
-      return attributes
-    end
-
-    def account_attributes_map
-      { :email => 'email' }
-    end
-
-    # Returns the account uid value from available attributes
-    def retrieve_uid(user_info)
-      raise NotImplementedError
     end
 
     def new_session(controller)
       controller.redirect_to authenticate_url(controller.oauth2_callback_url(:provider => provider))
+    end
+
+    def can_authenticate?(controller)
+      controller.params[:code].present? && controller.params[:error].blank?
     end
 
     def get_access_token(identity)
@@ -68,8 +44,8 @@ module EasyAuth::Models::Identities::Oauth2::Base
       {}
     end
 
-    def get_user_info(token)
-      ActiveSupport::JSON.decode(token.get(user_info_url).body)
+    def get_user_attributes(token)
+      ActiveSupport::JSON.decode(token.get(user_attributes_url).body)
     end
 
     def client
@@ -80,7 +56,7 @@ module EasyAuth::Models::Identities::Oauth2::Base
       client.auth_code.authorize_url(:redirect_uri => callback_url, :scope => oauth2_scope)
     end
 
-    def user_info_url
+    def user_attributes_url
       raise NotImplementedError
     end
 
@@ -95,25 +71,5 @@ module EasyAuth::Models::Identities::Oauth2::Base
     def site_url
       raise NotImplementedError
     end
-
-    def client_id
-      settings.client_id
-    end
-
-    def secret
-      settings.secret
-    end
-
-    def settings
-      EasyAuth.oauth2[provider]
-    end
-
-    def provider
-      self.to_s.split('::').last.underscore.to_sym
-    end
-  end
-
-  def get_access_token
-    self.class.get_access_token self
   end
 end

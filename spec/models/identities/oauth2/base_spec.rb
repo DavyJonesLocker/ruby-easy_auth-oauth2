@@ -43,14 +43,14 @@ end
 describe EasyAuth::Models::Identities::Oauth2::Base do
   before(:all) do
     class TestIdentity < Identity
-      include(EasyAuth::Models::Identities::Oauth2::Base)
+      include EasyAuth::Models::Identities::Oauth2::Base
 
-      def self.user_info_url
+      def self.user_attributes_url
         '/user'
       end
 
-      def self.retrieve_uid(user_info)
-        user_info['email']
+      def self.retrieve_uid(user_attributes)
+        user_attributes['email']
       end
     end
   end
@@ -162,8 +162,6 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
       end
 
       context 'identity already exists' do
-        let(:email) { FactoryGirl.generate(:email) }
-
         before do
           @test_identity = TestIdentity.create(:uid => email, :token => '123')
         end
