@@ -45,12 +45,12 @@ describe EasyAuth::Models::Identities::Oauth2::Base do
     class TestIdentity < Identity
       include EasyAuth::Models::Identities::Oauth2::Base
 
-      def self.user_attributes_url
+      def self.account_attributes_url
         '/user'
       end
 
-      def self.retrieve_uid(user_attributes)
-        user_attributes['email']
+      def self.retrieve_uid(account_attributes)
+        account_attributes['email']
       end
     end
   end

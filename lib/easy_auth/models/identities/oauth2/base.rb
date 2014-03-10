@@ -11,11 +11,11 @@ module EasyAuth::Models::Identities::Oauth2::Base
         callback_url    = controller.oauth2_callback_url(:provider => provider)
         code            = controller.params[:code]
         token           = client.auth_code.get_token(code, token_options(callback_url), token_params)
-        user_attributes = get_user_attributes(token)
-        identity        = self.find_or_initialize_by(:uid => retrieve_uid(user_attributes))
+        account_attributes = get_account_attributes(token)
+        identity        = self.find_or_initialize_by(:uid => retrieve_uid(account_attributes))
         identity.token  = token.token
 
-        [identity, user_attributes]
+        [identity, account_attributes]
       end
     end
 
@@ -31,6 +31,10 @@ module EasyAuth::Models::Identities::Oauth2::Base
       ::OAuth2::AccessToken.new client, identity.token
     end
 
+    def version
+      :oauth2
+    end
+
     def oauth2_scope
       ''
     end
@@ -44,8 +48,8 @@ module EasyAuth::Models::Identities::Oauth2::Base
       {}
     end
 
-    def get_user_attributes(token)
-      ActiveSupport::JSON.decode(token.get(user_attributes_url).body)
+    def get_account_attributes(token)
+      ActiveSupport::JSON.decode(token.get(account_attributes_url).body)
     end
 
     def client
@@ -56,7 +60,7 @@ module EasyAuth::Models::Identities::Oauth2::Base
       client.auth_code.authorize_url(:redirect_uri => callback_url, :scope => oauth2_scope)
     end
 
-    def user_attributes_url
+    def account_attributes_url
       raise NotImplementedError
     end
 
