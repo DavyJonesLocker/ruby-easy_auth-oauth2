@@ -8,12 +8,12 @@ module EasyAuth::Models::Identities::Oauth2::Base
   module ClassMethods
     def authenticate(controller)
       super(controller) do
-        callback_url    = controller.oauth2_callback_url(:provider => provider)
-        code            = controller.params[:code]
-        token           = client.auth_code.get_token(code, token_options(callback_url), token_params)
+        callback_url       = controller.oauth2_callback_url(:provider => provider)
+        code               = controller.params[:code]
+        token              = client.auth_code.get_token(code, token_options(callback_url), token_params)
         account_attributes = get_account_attributes(token)
-        identity        = self.find_or_initialize_by(:uid => retrieve_uid(account_attributes))
-        identity.token  = token.token
+        identity           = self.find_or_initialize_by(:uid => retrieve_uid(account_attributes))
+        identity.token     = token.token
 
         [identity, account_attributes]
       end
